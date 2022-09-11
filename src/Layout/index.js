@@ -3,9 +3,9 @@ import Header from "./Header";
 import NotFound from "./NotFound";
 import DeckIndex from "./DeckIndex";
 import CreateButton from "./CreateButton";
-import { Switch, Route } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-
+import New from "./decks/New";
+import { BrowserRouter as Router, Link, Switch, Route } from 'react-router-dom'
+import { useState, useEffect} from 'react'
 
 
 function Layout() {
@@ -21,7 +21,9 @@ function Layout() {
     getDecks()
   }, [])
 
-  // Fetch Decks
+
+
+ // Fetch Decks
   const fetchDecks = async () => {
     const res = await fetch('http://localhost:5000/decks')
     const data = await res.json()
@@ -49,14 +51,19 @@ function Layout() {
 
   return (
     <>
-
+      <Router>
       <Header />
       <div className='container'>
         <div className='my-3'>
-        <CreateButton />
+        <Link to="/decks/new">
+          <CreateButton />
+        </Link>
         </div>
         <Switch>
-          <Route>
+          <Route path="/decks/new">
+            <New />
+          </Route>
+          <Route >
             <DeckIndex decks={decks} onAdd={createDeck} onDelete={deleteDeck}/>
           </Route>
           <Route>
@@ -64,7 +71,7 @@ function Layout() {
           </Route>
         </Switch>
       </div>
-
+      </Router>
     </>
   );
 }
