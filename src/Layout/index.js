@@ -1,77 +1,46 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { Route, Switch } from "react-router-dom";
 import Header from "./Header";
 import NotFound from "./NotFound";
-import DeckIndex from "./DeckIndex";
-import CreateButton from "./CreateButton";
-import New from "./decks/New";
-import { BrowserRouter as Router, Link, Switch, Route } from 'react-router-dom'
-import { useState, useEffect} from 'react'
-
+import HomePage from "../HomePage";
+import Decks from "../Decks";
+import { listDecks } from "../utils/api";
 
 function Layout() {
-
+  //decks is a state variable array of each deck in the API
   const [decks, setDecks] = useState([]);
-  
+
+  //Loads the list of Decks from the API on startup
   useEffect(() => {
-    const getDecks = async () => {
-      const decksFromServer = await fetchDecks()
-      setDecks(decksFromServer)
+    const controller = new AbortController(); //to abort old requests
+
+    //API call to {API_BASE_URL}/decks?_embed=cards (All cards embedded in the deck)
+    async function loadDecks() {
+      listDecks(controller.signal)
+        .then(setDecks)
+        .catch((error) => {
+          if (error.name !== "AbortError") throw error;
+        });
     }
 
-    getDecks()
-  }, [])
-
-
-
- // Fetch Decks
-  const fetchDecks = async () => {
-    const res = await fetch('http://localhost:5000/decks')
-    const data = await res.json()
-    return data
-  }
-    // setDeck((currentdeck) => currentDeck.filter((d, index) => index !== indexToDelete)
-  // Create Deck
-  const createDeck = async (deck) => {
-    const res = await fetch('http://localhost:5000/decks')
-
-    const data = await res.json()
-
-    setDecks([...decks, data])
-    // const id = Math.floor(Math.random() * 1) + 1;
-    // const newDeck = { id, ...deck}
-    // setDecks([...decks, newDeck])
-  }
-
-  
-  //Delete Task
-  const deleteDeck = (id) => {
-    window.confirm('Delete this deck?\n\nYou will not be able to recover it.')
-    setDecks(decks.filter((deck) => deck.id !== id))
-  }
+    loadDecks();
+    return () => controller.abort(); //cleanup
+  }, []);
 
   return (
     <>
-      <Router>
       <Header />
-      <div className='container'>
-        <div className='my-3'>
-        <Link to="/decks/new">
-          <CreateButton />
-        </Link>
-        </div>
+      <div className="container">
         <Switch>
-          <Route path="/decks/new">
-            <New />
+          <Route exact path="/">
+            <HomePage decks={decks} setDecks={setDecks} />
           </Route>
-          <Route >
-            <DeckIndex decks={decks} onAdd={createDeck} onDelete={deleteDeck}/>
+          <Route path="/decks/">
+            <Decks decks={decks} setDecks={setDecks} />
           </Route>
-          <Route>
-            <NotFound />
-          </Route>
+          <NotFound />
         </Switch>
       </div>
-      </Router>
     </>
   );
 }
